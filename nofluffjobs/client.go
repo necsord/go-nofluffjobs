@@ -26,7 +26,7 @@ type Client struct {
 func NewClient(baseUri string, httpClient *http.Client, logger *log.Logger) (*Client, error) {
 	parsedUrl, err := url.Parse(baseUri)
 	if err != nil {
-		return nil, fmt.Errorf("client creation failed: %v", err)
+		return nil, fmt.Errorf("client creation failed: %w", err)
 	}
 
 	if httpClient == nil {
@@ -47,7 +47,7 @@ func NewClient(baseUri string, httpClient *http.Client, logger *log.Logger) (*Cl
 func (c *Client) SearchPosting(ctx context.Context, reqQParams SearchPostingQuery, reqBody SearchPostingRequest) (*SearchPostingResponse, error) {
 	qParams, err := query.Values(reqQParams)
 	if err != nil {
-		return nil, fmt.Errorf("could not process query params: %v", err)
+		return nil, fmt.Errorf("could not process query params: %w", err)
 	}
 
 	endpoint := fmt.Sprintf("%s/search/posting?%s", c.baseUrl.String(), qParams.Encode())
@@ -58,7 +58,7 @@ func (c *Client) SearchPosting(ctx context.Context, reqQParams SearchPostingQuer
 
 	res, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("request failed: %v", err)
+		return nil, fmt.Errorf("request failed: %w", err)
 	}
 	defer c.closeBody(res.Body)
 
@@ -75,14 +75,14 @@ func (c *Client) prepareRequest(ctx context.Context, endpoint, httpMethod string
 	if body != nil {
 		reqBody, err := json.Marshal(body)
 		if err != nil {
-			return nil, fmt.Errorf("could not encode request body: %v", err)
+			return nil, fmt.Errorf("could not encode request body: %w", err)
 		}
 		bufReqBody = bytes.NewBuffer(reqBody)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, httpMethod, endpoint, bufReqBody)
 	if err != nil {
-		return nil, fmt.Errorf("request creation failed: %v", err)
+		return nil, fmt.Errorf("request creation failed: %w", err)
 	}
 	req.Header.Set("Content-Type", contentType)
 
@@ -92,19 +92,19 @@ func (c *Client) prepareRequest(ctx context.Context, endpoint, httpMethod string
 func (c *Client) closeBody(body io.ReadCloser) {
 	err := body.Close()
 	if err != nil {
-		c.logger.Printf("error occurred when closing response body: %v\n", err)
+		c.logger.Printf("error occurred when closing response body: %w\n", err)
 	}
 }
 
 func parseResponse(res *http.Response, v any) error {
 	resBody, err := io.ReadAll(res.Body)
 	if err != nil {
-		return fmt.Errorf("could not read response body (status code: %d): %v", res.StatusCode, err)
+		return fmt.Errorf("could not read response body (status code: %d): %w", res.StatusCode, err)
 	}
 
 	err = json.Unmarshal(resBody, v)
 	if err != nil {
-		return &ErrorResponse{Response: res, Message: fmt.Sprintf("could not decode response: %v", err)}
+		return &ErrorResponse{Response: res, Err: fmt.Errorf("could not decode response: %w", err)}
 	}
 
 	return nil

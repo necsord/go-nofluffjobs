@@ -99,7 +99,7 @@ type Logo struct {
 }
 
 type ErrorResponse struct {
-	Message  string
+	Err      error
 	Response *http.Response
 }
 
@@ -109,6 +109,6 @@ func (res ErrorResponse) Error() string {
 		res.Response.Request.Method,
 		res.Response.Request.URL,
 		res.Response.StatusCode,
-		res.Message,
+		res.Err,
 	)
 }
